@@ -5,5 +5,5 @@ cybercodeonline.com
 ```
 npm run build
 cd dist
-npn run start
+npm run start
 ```
