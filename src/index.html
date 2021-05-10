@@ -1,0 +1,72 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="">
+  <meta property="og:type" content="">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/app.css">
+
+  <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+
+  <h2>Editor</h2>
+  <div id="editor_wrapper">
+    <div id="editor"></div>
+  </div>
+  <label class="container">show tiles
+    <input type="checkbox" id="tilesCheckbox" checked="checked">
+    <span class="checkmark"></span>
+  </label>
+  <label class="container">show lines
+    <input type="checkbox" id="borderCheckbox">
+    <span class="checkmark"></span>
+  </label>
+  <h2>Output</h2>
+  <textarea id="outputText" cols="90" rows="18" readonly></textarea>
+  <br />
+  <input type="button" class="button" id="copyToClipboard" value="CIPBOARD">
+  <input type="button" class="button" id="resetButton" value="RESET"></input>
+  <h2>Input</h2>
+  <textarea id="inputText" cols="90" rows="18"></textarea>
+  <br />
+  <input type="button" class="button" id="parseInputButton" value="PARSE"></input>
+
+  <script src="js/vendor/modernizr-3.11.7.min.js"></script>
+  <script src="js/pathfinding-browser.min.js" type="module"></script>
+  <script src="js/app.js" type="module"></script>
+
+  <script type="module">
+    window.onload = () => {
+      const uiElements = {
+        editor: document.getElementById('editor'),
+        outputText: document.getElementById('outputText'),
+        inputText: document.getElementById('inputText'),
+        parseInputButton: document.getElementById('parseInputButton'),
+        resetButton: document.getElementById('resetButton'),
+        tilesCheckbox: document.getElementById('tilesCheckbox'),
+        borderCheckbox: document.getElementById('borderCheckbox'),
+        copyToClipboard: document.getElementById('copyToClipboard')
+      };
+
+      ccoDungeonEditor.initUI(ccoDungeonEditor.createModel(15), uiElements);
+    }
+  </script>
+</body>
+
+</html>

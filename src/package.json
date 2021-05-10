@@ -1,0 +1,17 @@
+{
+  "name": "cco-dungeon-editor",
+  "version": "0.0.1",
+  "description": "CCO Dungeon Editor",
+  "keywords": [
+    "cco"
+  ],
+  "license": "MIT",
+  "author": "AndyCandy",
+  "scripts": {
+    "start": "npx http-server . -o ./index.html",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "http-server": "^0.12.3"
+  }
+}
