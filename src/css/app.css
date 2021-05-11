@@ -27,6 +27,15 @@ div {
     box-sizing: border-box;
     border: 1px #313131 solid;
 }
+.editable:hover {
+    background-color: #2A2A2A;
+}
+.invalid .editable:hover{
+    background-color: #462E2E;
+}
+.blocks .active.editable:hover {
+    background-color: #BBBBBB;
+}
 .blocks .active {
     background-color: #999999;
 }

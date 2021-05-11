@@ -313,6 +313,7 @@ const ccoDungeonEditor = (() => {
                     }
     
                     if (model.isEditable(x, y)) {
+                        xdiv.classList.add('editable');
                         xdiv.addEventListener('click', () => {
                             model.swapPos(x, y);
                         });
