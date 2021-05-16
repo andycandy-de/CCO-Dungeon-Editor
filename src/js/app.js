@@ -210,140 +210,198 @@ const ccoDungeonEditor = (() => {
     }
     
     function initUI(model, uiElements) {
-    
-        model.addListener(update);
-    
-        update(model.getLayout());
-    
-        if (typeof uiElements.resetButton !== 'undefined') {
-            uiElements.resetButton.addEventListener('click', () => {
-                model.reset();
-            });
-        }
-    
-        if (typeof uiElements.tilesCheckbox !== 'undefined') {
-            uiElements.tilesCheckbox.addEventListener('change', () => {
-                updateEditor(model.getLayout());
-            });
-        }
-    
-        if (typeof uiElements.borderCheckbox !== 'undefined') {
-            uiElements.borderCheckbox.addEventListener('change', () => {
-                updateEditor(model.getLayout());
-            });
-        }
-    
-        if (typeof uiElements.copyToClipboard !== 'undefined' && typeof uiElements.outputText !== 'undefined') {
-            uiElements.copyToClipboard.addEventListener('click', () => {
-                if (model.hasAllPaths()) {
-                    uiElements.outputText.select();
-                    document.execCommand('copy');
-                    alert('Dungeon is copied to your clipboard!');
-                }
-            });
-        }
-    
-        if (typeof uiElements.parseInputButton !== 'undefined') {
-            uiElements.parseInputButton.addEventListener('click', () => {
-                const str = uiElements.inputText.value;
-                const newLayout = stringToLayout(str);
-                if (newLayout.error) {
-                    alert(newLayout.msg);
-                }
-                else if (!model.isValid(newLayout.layout)) {
-                    alert('Layout is not valid!');
-                }
-                else if (!model.isEqual(newLayout.layout)) {
-                    model.setLayout(newLayout.layout);
-                }
-            });
-        }
-    
-        function update(layout) {
-            if (typeof uiElements.copyToClipboard !== 'undefined' && model.hasAllPaths()) {
-                uiElements.copyToClipboard.disabled = false;
-            }
-            else {
-                uiElements.copyToClipboard.disabled = true;
-            }
-            updateEditor(layout);
-            updateOutputText(layout);
-        }
-    
-        function updateEditor(layout) {
-    
-            if (typeof uiElements.editor === 'undefined') {
-                return;
-            }
-    
-            if (!model.hasAllPaths()) {
-                uiElements.editor.classList.add('invalid');
-            }
-            else {
-                uiElements.editor.classList.remove('invalid');
-            }
-            if (typeof uiElements.tilesCheckbox !== 'undefined' && uiElements.tilesCheckbox.checked) {
-                uiElements.editor.classList.add('tiles');
-                uiElements.editor.classList.remove('blocks');
-            }
-            else {
-                uiElements.editor.classList.remove('tiles');
-                uiElements.editor.classList.add('blocks');
-            }
-    
+
+        const _editorUI = doWith(uiElements.editor, (editor) => {
+
             const size = model.getSize();
-            const fieldSize = 100 / size;
-    
-            uiElements.editor.innerHTML = '';
+            
+            const cells = [];
+            const fieldSizeInPercent = 100 / size;
+
+            for (let x = 0; x < size; ++x) {
+                const list = [];
+                for (let y = 0; y < size; ++y) {
+                    const cell = document.createElement('div');
+                    cell.style.width = `${fieldSizeInPercent}%`;
+                    cell.style.height = '100%';
+                    cell.style.display = 'inline-block';
+                    cell.classList.add('cell');
+                    list.push(cell);
+                }
+                cells.push(list);
+            }
+
             for (let y = 0; y < size; ++y) {
-                const ydiv = document.createElement('div');
-                ydiv.style.width = '100%';
-                ydiv.style.height = `${fieldSize}%`;
+
+                const yDiv = document.createElement('div');
+                yDiv.style.width = '100%';
+                yDiv.style.height = `${fieldSizeInPercent}%`;
+
                 for (let x = 0; x < size; ++x) {
-                    const xdiv = document.createElement('div');
-                    xdiv.style.width = `${fieldSize}%`;
-                    xdiv.style.height = '100%';
-                    xdiv.style.display = 'inline-block';
-                    if (typeof uiElements.borderCheckbox !== 'undefined' && uiElements.borderCheckbox.checked) {
-                        xdiv.classList.add('bordered');
-                    }
-    
-                    if (layout[x][y]) {
-                        xdiv.classList.add('active');
-                    }
-    
+                
+                    const cell = cells[x][y];
+
                     if (model.isEditable(x, y)) {
-                        xdiv.classList.add('editable');
-                        xdiv.addEventListener('click', () => {
+                        cell.classList.add('editable');
+                        cell.addEventListener('click', () => {
                             model.swapPos(x, y);
                         });
                     }
-                    ydiv.appendChild(xdiv);
+
+                    yDiv.appendChild(cell);
                 }
-    
-                uiElements.editor.appendChild(ydiv);
+
+                editor.appendChild(yDiv);
             }
+
+            function update(layout) {
+
+                if (!model.hasAllPaths()) {
+                    editor.classList.add('invalid');
+                }
+                else {
+                    editor.classList.remove('invalid');
+                }
+
+                for (let x = 0; x < size; ++x) {
+                    for (let y = 0; y < size; ++y) {
+                        if (layout[x][y]) {
+                            cells[x][y].classList.add('active');
+                        }
+                        else {
+                            cells[x][y].classList.remove('active');
+                        }
+                    }
+                }
+            }
+
+            function showTiles(b) {
+
+                if (b) {
+                    editor.classList.add('tiles');
+                    editor.classList.remove('blocks');
+                }
+                else {
+                    editor.classList.remove('tiles');
+                    editor.classList.add('blocks');
+                }
+            }
+
+            function showLines(b) {
+
+                if (b) {
+                    editor.classList.add('lines');
+                }
+                else {
+                    editor.classList.remove('lines');
+                }
+            }
+
+            showTiles(true);
+            showLines(false);
+            update(model.getLayout());
+
+            return {
+                update: update,
+                showTiles: showTiles,
+                showLines: showLines
+            };
+        });
+
+        doWith(uiElements.resetButton, (resetButton) => {
+            resetButton.addEventListener('click', () => {
+                model.reset();
+            });
+        });
+        
+        doWith(uiElements.tilesCheckbox, (tilesCheckbox) => {
+            const updateShowTiles = () => {
+                doWith(_editorUI, (editorUI) => {
+                    editorUI.showTiles(tilesCheckbox.checked);
+                });
+            };
+            updateShowTiles();
+            tilesCheckbox.addEventListener('change', () => {
+                updateShowTiles();
+            });
+        });
+        
+        doWith(uiElements.linesCheckbox, (linesCheckbox) => {
+            const updateShowLines = () => {
+                doWith(_editorUI, (editorUI) => {
+                    editorUI.showLines(linesCheckbox.checked);
+                });
+            };
+            updateShowLines();
+            linesCheckbox.addEventListener('change', () => {
+                updateShowLines();
+            });
+        });
+        
+        doWith(uiElements.copyToClipboard, (copyToClipboard) => {
+            copyToClipboard.addEventListener('click', () => {
+                doWith(uiElements.outputText, (outputText) => {
+                    if (model.hasAllPaths()) {
+                        outputText.select();
+                        document.execCommand('copy');
+                        alert('Dungeon is copied to your clipboard!');
+                    }
+                });
+            });
+        });
+
+        doWith(uiElements.parseInputButton, (parseInputButton) => {
+            parseInputButton.addEventListener('click', () => {
+                doWith(uiElements.inputText, (inputText) => {
+                    const str = inputText.value;
+                    const newLayout = stringToLayout(str);
+                    if (newLayout.error) {
+                        alert(newLayout.msg);
+                    }
+                    else if (!model.isValid(newLayout.layout)) {
+                        alert('Layout is not valid!');
+                    }
+                    else if (!model.isEqual(newLayout.layout)) {
+                        model.setLayout(newLayout.layout);
+                    }
+                });
+            });
+        });
+    
+        function update(layout) {
+
+            doWith(uiElements.copyToClipboard, (copyToClipboard) => {
+                if (model.hasAllPaths()) {
+                    copyToClipboard.disabled = false;
+                }
+                else {
+                    copyToClipboard.disabled = true;
+                }
+            });
+
+            doWith(_editorUI, (editorUI) => {
+                editorUI.update(layout);
+            });
+
+            doWith(uiElements.outputText, (outputText) => {
+
+                if (!model.hasAllPaths()) {
+                    outputText.value = 'Dungeon is not valid!';
+                }
+                else {
+                    outputText.value = toFormatedDungeonJsonString(layout);
+                }
+            });
         }
-    
-        function updateOutputText(layout) {
-    
-            if (typeof uiElements.outputText === 'undefined') {
-                return;
-            }
-    
-            if (!model.hasAllPaths()) {
-                uiElements.outputText.value = 'Dungeon is not valid!';
-            }
-            else {
-                uiElements.outputText.value = toFormatedDungeonJsonString(layout);
-            }
-        }
+
+        model.addListener(update);
+        update(model.getLayout());
     
         function stringToLayout(str) {
             try {
                 const size = model.getSize();
                 const json = JSON.parse(str);
-                if (typeof json.tiles === 'undefined') {
+                if (isUndefined(json.tiles)) {
                     return { error: true, msg: 'Tiles is not defined in the JSON!' };
                 }
                 if (!Array.isArray(json.tiles)) {
@@ -390,6 +448,16 @@ const ccoDungeonEditor = (() => {
             }
     
             return `{\n\t"tiles": [\n${tiles}\t]\n}`;
+        }
+        
+        function isUndefined(o) {
+            return typeof o === 'undefined';
+        }
+
+        function doWith(o, f) {
+            if (!isUndefined(o) && !isUndefined(f)) {
+                return f(o);
+            }
         }
     }
 
