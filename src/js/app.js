@@ -354,16 +354,7 @@ const ccoDungeonEditor = (() => {
             parseInputButton.addEventListener('click', () => {
                 doWith(uiElements.inputText, (inputText) => {
                     const str = inputText.value;
-                    const newLayout = stringToLayout(str);
-                    if (newLayout.error) {
-                        alert(newLayout.msg);
-                    }
-                    else if (!model.isValid(newLayout.layout)) {
-                        alert('Layout is not valid!');
-                    }
-                    else if (!model.isEqual(newLayout.layout)) {
-                        model.setLayout(newLayout.layout);
-                    }
+                    setStringLayoutToModel(str);
                 });
             });
         });
@@ -389,13 +380,45 @@ const ccoDungeonEditor = (() => {
                     outputText.value = 'Dungeon is not valid!';
                 }
                 else {
-                    outputText.value = toFormatedDungeonJsonString(layout);
+                    outputText.value = `${createURLWithLayout()}\n\`\`\`\n${toFormatedDungeonJsonString(layout)}\n\`\`\``;
                 }
             });
+
+            updateQueryStringParam('parse', createLayoutForURL());
+        }
+
+        try {
+            const layoutFromURL = parseLayoutFromURL();
+            if (!isUndefined(layoutFromURL)) {
+                if (model.isValid(layoutFromURL)) {
+                    model.setLayout(layoutFromURL);
+                }
+                else {
+                    console.log('Layout is not valid!');
+                }
+            }
+        }
+        catch (e) {
+            console.log(e.message);
         }
 
         model.addListener(update);
         update(model.getLayout());
+
+        function setStringLayoutToModel(str) {
+
+            const newLayout = stringToLayout(str);
+
+            if (newLayout.error) {
+                alert(newLayout.msg);
+            }
+            else if (!model.isValid(newLayout.layout)) {
+                alert('Layout is not valid!');
+            }
+            else if (!model.isEqual(newLayout.layout)) {
+                model.setLayout(newLayout.layout);
+            }
+        }
     
         function stringToLayout(str) {
             try {
@@ -448,6 +471,85 @@ const ccoDungeonEditor = (() => {
             }
     
             return `{\n\t"tiles": [\n${tiles}\t]\n}`;
+        }
+
+        function parseLayoutFromURL() {
+
+            const urlParams = new URLSearchParams(location.search);
+            const queryParse = urlParams.get('parse');
+            if (typeof queryParse !== 'string') {
+                return;
+            }
+            const size = model.getSize();
+            const layout = [];
+
+            for (let i = 0; i < size; ++i) {
+                layout.push([]);
+            }
+
+            let binaryLayout = '';
+            
+            for (const block of chunkString(queryParse, 4)) {
+                const binaryBlock =  parseInt(block, 16).toString(2);
+                const filledBinaryBlock = ('0'.repeat(size) + binaryBlock).slice(-size);
+                binaryLayout += filledBinaryBlock;
+            }
+
+            for (let i = 0; i < binaryLayout.length; ++i) {
+                const c = binaryLayout[i];
+                const x = i % size;
+                const y = Math.floor(i / size);
+                layout[x][y] = (c === '1') ? true : false;
+            }
+
+            return layout;
+        }
+
+        function createURLWithLayout() {
+            const url = new URL(location.href);
+            return `${url.origin}${url.pathname}?parse=${createLayoutForURL()}`;
+        }
+
+        function updateQueryStringParam(param, value) {
+            const url = new URL(location.href);
+            const baseUrl = [url.protocol, '//', url.host, url.pathname].join('');
+            const urlQueryString = location.search;
+            const newParam = param + '=' + value;
+            let params = '?' + newParam;
+
+            // If the "search" string exists, then build params from it
+            if (urlQueryString) {
+                const keyRegex = new RegExp('([\\?&])' + param + '[^&]*');
+                // If param exists already, update it
+                if (urlQueryString.match(keyRegex) !== null) {
+                    params = urlQueryString.replace(keyRegex, '$1' + newParam);
+                } else { // Otherwise, add it to end of query string
+                    params = urlQueryString + '&' + newParam;
+                }
+            }
+            window.history.replaceState({}, '', baseUrl + params);
+        }
+
+        function createLayoutForURL() {
+            
+            const size = model.getSize();
+            const layout = model.getLayout();
+            let urlLayout = '';
+            for (let y = 0; y < size; ++y) {
+                let block = '';
+                for (let x = 0; x < size; ++x) {
+                    block += (layout[x][y]) ? '1' : '0';
+                }
+                const hexaBlock = parseInt(block, 2).toString(16);
+                const hexaBlockSize = 4;
+                urlLayout += ('0'.repeat(hexaBlockSize) + hexaBlock).slice(-hexaBlockSize);
+            }
+
+            return urlLayout;
+        }
+
+        function chunkString(str, length) {
+            return str.match(new RegExp('.{1,' + length + '}', 'g'));
         }
         
         function isUndefined(o) {
