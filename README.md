@@ -1,7 +1,7 @@
 # CCO Dungeon Editor
 
 [cybercodeonline.com]
-[https://tripplehelix.000webhostapp.com/dungeon.php]
+[https://cco-dungeon-editor.netlify.app]
 
 ```
 npm run build
